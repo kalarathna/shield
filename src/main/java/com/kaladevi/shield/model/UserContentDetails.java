@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Getter
 @Setter
-public class UserDetails {
+public class UserContentDetails {
 
     private String firstName;
     private String lastName;

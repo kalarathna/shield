@@ -1,12 +1,13 @@
 package com.kaladevi.shield.service;
-import com.kaladevi.shield.model.UserDetails;
+import com.kaladevi.shield.model.LoginModel;
+import com.kaladevi.shield.model.UserContentDetails;
 import  org.springframework.stereotype.Service;
 
 @Service
 public interface LoginService {
 
-    public String validateLoginCredentials(String username, String password);
+    public LoginModel validateLoginCredentials(LoginModel loginModel);
 
-    public String createUser(UserDetails userDetails);
+    public LoginModel createUser(UserContentDetails userDetails);
 
 }

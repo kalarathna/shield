@@ -6,6 +6,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -34,6 +35,12 @@ public class UserDetailsEntity {
 
     @Column(name="date_of_birth", nullable = false)
     public Date dateOfBirth;
+
+    @OneToMany(mappedBy = "userDetailsId")
+    private List<UserContentEntity> userContentEntityList;
+
+    @OneToMany(mappedBy = "userDetailsId")
+    private List<PasswordNotificationEntity> passwordNotificationEntityList;
 
 
 
