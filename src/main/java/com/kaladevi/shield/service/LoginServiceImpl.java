@@ -64,7 +64,6 @@ public class LoginServiceImpl implements LoginService {
                 userDetailsEntity.setLastName(userDetails.getLastName());
                 userDetailsEntity.setEmail(userDetails.getEmail());
                 userDetailsEntity.setPassword(userDetails.getPassword());
-                userDetailsEntity.setDateOfBirth(userDetails.getDateOfBirth());
                 entityManager.persist(userDetailsEntity);
                 UserDetailsEntity userDetailsEntity2 = checkExistingUserByEmail(userDetails.getEmail());
                 loginModel.setLoginUUID(userDetailsEntity2.getUserDetailsId());
@@ -83,7 +82,6 @@ public class LoginServiceImpl implements LoginService {
     }
 
     public UserDetailsEntity checkExistingUserByEmail(String email){
-
         UserDetailsEntity userDetailsEntity= userDetailsRepo.findUserDetailsEntityIdByEmail(email);
         return userDetailsEntity;
     }

@@ -3,6 +3,7 @@ package com.kaladevi.shield.service;
 import com.kaladevi.shield.entity.PasswordNotificationEntity;
 import com.kaladevi.shield.entity.UserContentEntity;
 import com.kaladevi.shield.entity.UserDetailsEntity;
+import com.kaladevi.shield.model.PasswordNotification;
 import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.repositories.PasswordNotificationRepo;
 import com.kaladevi.shield.repositories.UserContentRepo;
@@ -19,6 +20,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.transaction.Transactional;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
@@ -91,6 +93,7 @@ public class UploadServiceImpl implements UploadService{
                     userContent.setDocumentName(userContents.getDocumentName());
                     userContent.setDocumentContent(userContents.getDocumentContent());
                     userContent.setUploadFileName(userContents.getUploadFileName());
+                    userContent.setFileSize(userContents.getFileSize());
                     String p= ServletUriComponentsBuilder.fromCurrentContextPath()
                             .path("/files/")
                             .path(userContents.getFiles().toString())
@@ -129,4 +132,31 @@ public class UploadServiceImpl implements UploadService{
 
         return "success";
      }
+
+
+    public String sendPasswordExpiryNotification(PasswordNotification passwordNotification ){
+        int daysToAdd=90;
+        Date cd;
+        Date d;
+        LocalDate expiryDate;
+        PasswordNotificationEntity passwordNotificationEntity= new PasswordNotificationEntity();
+        PasswordNotificationEntity existingPasswordNotificationEntity=passwordNotificationRepo.findAllByUserDetailsId(passwordNotification.getUserID());
+        if(Objects.nonNull(existingPasswordNotificationEntity)){
+            cd=Date.valueOf(passwordNotification.getCreationDate());
+            passwordNotificationEntity.setCreationDate(cd);
+            expiryDate=passwordNotificationEntity.getCreationDate().toLocalDate().plusDays(daysToAdd);
+            d= Date.valueOf(expiryDate);
+            passwordNotificationEntity.setExpriryDate(d);
+            passwordNotificationRepo.save(passwordNotificationEntity);
+        }
+        passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
+        cd=Date.valueOf(passwordNotification.getCreationDate());
+        passwordNotificationEntity.setCreationDate(cd);
+        expiryDate=passwordNotificationEntity.getCreationDate().toLocalDate().plusDays(daysToAdd);
+        d= Date.valueOf(expiryDate);
+        passwordNotificationEntity.setExpriryDate(d);
+        passwordNotificationRepo.save(passwordNotificationEntity);
+
+        return "success";
+    }
 }

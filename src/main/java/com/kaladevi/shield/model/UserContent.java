@@ -18,4 +18,5 @@ public class UserContent {
     private String documentName;
     private String documentContent;
     private String downloadFile;
+    private Long fileSize;
 }

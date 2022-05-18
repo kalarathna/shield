@@ -14,7 +14,7 @@ public class UserContentDetails {
     private String email;
     private String password;
     private String organisationName;
-    private Date dateOfBirth;
+   // private Date dateOfBirth;
 
 
 

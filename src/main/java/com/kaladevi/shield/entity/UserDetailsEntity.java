@@ -33,8 +33,8 @@ public class UserDetailsEntity {
     @Column(name="password", nullable = false)
     public String password;
 
-    @Column(name="date_of_birth", nullable = false)
-    public Date dateOfBirth;
+    @Column(name="organisation_name")
+    public String organisationName ;
 
     @OneToMany(mappedBy = "userDetailsId")
     private List<UserContentEntity> userContentEntityList;

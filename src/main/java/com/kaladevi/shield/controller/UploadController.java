@@ -1,6 +1,7 @@
 package com.kaladevi.shield.controller;
 
 
+import com.kaladevi.shield.model.PasswordNotification;
 import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,9 +34,7 @@ public class UploadController {
 
     @PostMapping(value = "/savefile", produces = "application/json")
     public String saveFile(@RequestBody UserContent userContent){
-
         return uploadService.saveText(userContent);
-
     }
 
     @PostMapping(value="/deletefile", produces = "application/json")
@@ -50,8 +49,13 @@ public class UploadController {
     }
 
     @PostMapping(value  ="/sendemail", produces = "application/json")
-    public String sendPasswordExpiryNotifictaion(@RequestParam("username") String username){
+    public String sendPasswordExpiryNotification(@RequestParam("username") String username){
         return uploadService.sendPasswordExpiryNotifictaion(username);
+    }
+
+    @PostMapping(value  ="/savePassword", produces = "application/json")
+    public String savePasswordNotification(@RequestBody PasswordNotification passwordNotification){
+        return uploadService.sendPasswordExpiryNotification(passwordNotification);
     }
 
 }

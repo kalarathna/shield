@@ -28,6 +28,8 @@ public class LoginController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public LoginModel createUser(@RequestBody UserContentDetails userDetails){
 
+        System.out.println(userDetails.getEmail());
+
          return loginService.createUser(userDetails);
 
     }

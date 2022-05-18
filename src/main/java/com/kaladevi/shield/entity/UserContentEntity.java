@@ -27,6 +27,9 @@ public class UserContentEntity {
     @Column(name="files")
     public byte[] files;
 
+    @Column(name="file_size")
+    public Long fileSize;
+
     @Column(name="document_name")
     public String documentName;
 

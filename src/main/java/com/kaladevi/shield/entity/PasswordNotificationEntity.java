@@ -20,6 +20,12 @@ public class PasswordNotificationEntity {
     @Column(name="password_notifictaion_id")
     public UUID passwordNotificationId;
 
+    @Column(name="application_name")
+    public String applicationName;
+
+    @Column(name="creation_date")
+    public Date creationDate;
+
     @Column(name="expiry_date")
     public Date expriryDate;
 
