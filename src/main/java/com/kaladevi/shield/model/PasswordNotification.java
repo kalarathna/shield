@@ -11,11 +11,11 @@ import java.util.UUID;
 @Setter
 public class PasswordNotification {
 
-    public String username;
+    public String userName;
     public UUID userID;
     public String applicationName;
-    public LocalDate creationDate;
-    public LocalDate expiryDate;
+    public String creationDate;
+    public String expiryDate;
     public Boolean notificationStatus;
 
 }

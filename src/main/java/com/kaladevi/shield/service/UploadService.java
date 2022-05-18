@@ -14,7 +14,7 @@ public interface UploadService {
     public String saveText(UserContent userContent);
     public String deleteFile(UserContent userContent);
     public List<UserContent> getUserContent(String username);
-    public String sendPasswordExpiryNotifictaion(String username);
-    public String sendPasswordExpiryNotification(PasswordNotification passwordNotification );
+    public String sendPasswordExpiryNotification(String username);
+    public String savePasswordExpiryNotification(PasswordNotification passwordNotification );
 
 }

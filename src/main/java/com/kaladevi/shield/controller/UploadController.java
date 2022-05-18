@@ -5,6 +5,7 @@ import com.kaladevi.shield.model.PasswordNotification;
 import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +21,7 @@ public class UploadController {
 
     @Autowired
     UploadService uploadService;
+
 
     @PostMapping(value = "/uploadfile", produces="application/json")
     public String uploadFiles(@RequestParam("multipartFile") MultipartFile file, @RequestParam("email") String email )throws Exception{
@@ -50,12 +52,12 @@ public class UploadController {
 
     @PostMapping(value  ="/sendemail", produces = "application/json")
     public String sendPasswordExpiryNotification(@RequestParam("username") String username){
-        return uploadService.sendPasswordExpiryNotifictaion(username);
+        return uploadService.sendPasswordExpiryNotification(username);
     }
 
-    @PostMapping(value  ="/savePassword", produces = "application/json")
+    @PostMapping(value  ="/savepassword", produces = "application/json")
     public String savePasswordNotification(@RequestBody PasswordNotification passwordNotification){
-        return uploadService.sendPasswordExpiryNotification(passwordNotification);
+        return uploadService.savePasswordExpiryNotification(passwordNotification);
     }
 
 }

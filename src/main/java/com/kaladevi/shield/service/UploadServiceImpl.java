@@ -11,6 +11,7 @@ import com.kaladevi.shield.repositories.UserDetailsRepo;
 import org.apache.tomcat.jni.Local;
 import org.hibernate.validator.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -37,6 +39,8 @@ public class UploadServiceImpl implements UploadService{
     @Autowired
     UserContentRepo userContentRepo;
 
+    @Autowired
+    EmailServiceImpl emailService;
 
 
     @Autowired
@@ -111,22 +115,27 @@ public class UploadServiceImpl implements UploadService{
         return userContentList;
     }
 
-     public String sendPasswordExpiryNotifictaion(String username){
+     public String sendPasswordExpiryNotification(String username){
          String firstName="";
          LocalDate expiryDate;
-         EmailServiceImpl emailService= new EmailServiceImpl();
+
          UserDetailsEntity userDetailsEntity= userDetailsRepo.findUserDetailsEntityIdByEmail(username);
          if(Objects.nonNull(userDetailsEntity)){
               firstName= userDetailsEntity.getFirstName();
-              PasswordNotificationEntity passwordNotificationEntity=passwordNotificationRepo.findAllByUserDetailsId(userDetailsEntity.getUserDetailsId());
+              List<PasswordNotificationEntity> passwordNotificationEntity=passwordNotificationRepo.findAllByUserDetailsIdUserDetailsId(userDetailsEntity.getUserDetailsId());
               if(Objects.nonNull(passwordNotificationEntity)){
-                  expiryDate= passwordNotificationEntity.getExpriryDate().toLocalDate();
-                  LocalDate today= LocalDate.now();
-                  Period emailSendDate=Period.between(expiryDate, today);
-                  if(emailSendDate.getDays()<5){
-                      emailService.sendEmail(username,firstName,passwordNotificationEntity.getExpriryDate());
-                  }
+                  if(passwordNotificationEntity.size()>0) {
+                      for (PasswordNotificationEntity passwordNotification1 : passwordNotificationEntity) {
+                    expiryDate=passwordNotification1.getExpriryDate().toLocalDate();
+                    LocalDate today = LocalDate.now();
+                    Period emailSendDate=Period.between(expiryDate, today);
+                    if(emailSendDate.getDays()<5){
+                              emailService.sendEmail(username,firstName,passwordNotification1.getExpriryDate().toLocalDate());
 
+                          }
+                      }
+                  }
+                  return "success";
               }
          }
 
@@ -134,27 +143,43 @@ public class UploadServiceImpl implements UploadService{
      }
 
 
-    public String sendPasswordExpiryNotification(PasswordNotification passwordNotification ){
+     @Transactional
+    public String savePasswordExpiryNotification(PasswordNotification passwordNotification ){
         int daysToAdd=90;
         Date cd;
         Date d;
-        LocalDate expiryDate;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate localCreateDate = LocalDate.parse(passwordNotification.getCreationDate(), formatter);
+
+        LocalDate  expiryDate = localCreateDate.plusDays(daysToAdd);
         PasswordNotificationEntity passwordNotificationEntity= new PasswordNotificationEntity();
         PasswordNotificationEntity existingPasswordNotificationEntity=passwordNotificationRepo.findAllByUserDetailsId(passwordNotification.getUserID());
         if(Objects.nonNull(existingPasswordNotificationEntity)){
-            cd=Date.valueOf(passwordNotification.getCreationDate());
-            passwordNotificationEntity.setCreationDate(cd);
-            expiryDate=passwordNotificationEntity.getCreationDate().toLocalDate().plusDays(daysToAdd);
-            d= Date.valueOf(expiryDate);
-            passwordNotificationEntity.setExpriryDate(d);
-            passwordNotificationRepo.save(passwordNotificationEntity);
+            if(existingPasswordNotificationEntity.getApplicationName().equalsIgnoreCase(passwordNotification.getApplicationName())) {
+                cd = Date.valueOf(localCreateDate);
+                passwordNotificationEntity.setCreationDate(cd);
+                d = Date.valueOf(expiryDate);
+                passwordNotificationEntity.setExpriryDate(d);
+                passwordNotificationEntity.setUserDetailsId(existingPasswordNotificationEntity.getUserDetailsId());
+                passwordNotificationRepo.save(passwordNotificationEntity);
+            }
+            else{
+                passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
+                cd=Date.valueOf(localCreateDate);
+                passwordNotificationEntity.setCreationDate(cd);
+                d= Date.valueOf(expiryDate);
+                passwordNotificationEntity.setExpriryDate(d);
+                passwordNotificationEntity.setUserDetailsId(existingPasswordNotificationEntity.getUserDetailsId());
+                passwordNotificationRepo.save(passwordNotificationEntity);
+            }
         }
+        UserDetailsEntity userDetailsEntity=userDetailsRepo.findUserDetailsEntityIdByEmail(passwordNotification.getUserName());
         passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
-        cd=Date.valueOf(passwordNotification.getCreationDate());
+        cd=Date.valueOf(localCreateDate);
         passwordNotificationEntity.setCreationDate(cd);
-        expiryDate=passwordNotificationEntity.getCreationDate().toLocalDate().plusDays(daysToAdd);
         d= Date.valueOf(expiryDate);
         passwordNotificationEntity.setExpriryDate(d);
+        passwordNotificationEntity.setUserDetailsId(userDetailsEntity);
         passwordNotificationRepo.save(passwordNotificationEntity);
 
         return "success";
