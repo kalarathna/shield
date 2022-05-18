@@ -18,13 +18,13 @@ public class LoginController {
     @Autowired
     LoginService loginService;
 
-    @PostMapping(value="/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value="/shield/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public LoginModel login(@RequestBody LoginModel loginModel){
         return loginService.validateLoginCredentials(loginModel);
 
     }
 
-    @PostMapping(value ="/createuser", consumes = MediaType.APPLICATION_JSON_VALUE,
+    @PostMapping(value ="/shield/createuser", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public LoginModel createUser(@RequestBody UserContentDetails userDetails){
 

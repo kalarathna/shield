@@ -23,7 +23,7 @@ public class UploadController {
     UploadService uploadService;
 
 
-    @PostMapping(value = "/uploadfile", produces="application/json")
+    @PostMapping(value = "/shield/uploadfile", produces="application/json")
     public String uploadFiles(@RequestParam("multipartFile") MultipartFile file, @RequestParam("email") String email )throws Exception{
         UserContent userContent= new UserContent();
         userContent.setUsername(email);
@@ -34,28 +34,28 @@ public class UploadController {
 
     }
 
-    @PostMapping(value = "/savefile", produces = "application/json")
+    @PostMapping(value = "/shield/savefile", produces = "application/json")
     public String saveFile(@RequestBody UserContent userContent){
         return uploadService.saveText(userContent);
     }
 
-    @PostMapping(value="/deletefile", produces = "application/json")
+    @PostMapping(value="/shield/deletefile", produces = "application/json")
     public String deleteFile(@RequestBody UserContent userContent){
         uploadService.deleteFile(userContent);
         return null;
     }
 
-    @PostMapping(value ="/getcontent", produces = "application/json" )
+    @PostMapping(value ="/shield/getcontent", produces = "application/json" )
     public List<UserContent> getUserContent(String username){
         return uploadService.getUserContent(username);
     }
 
-    @PostMapping(value  ="/sendemail", produces = "application/json")
+    @PostMapping(value  ="/shield/sendemail", produces = "application/json")
     public String sendPasswordExpiryNotification(@RequestParam("username") String username){
         return uploadService.sendPasswordExpiryNotification(username);
     }
 
-    @PostMapping(value  ="/savepassword", produces = "application/json")
+    @PostMapping(value  ="/shield/savepassword", produces = "application/json")
     public String savePasswordNotification(@RequestBody PasswordNotification passwordNotification){
         return uploadService.savePasswordExpiryNotification(passwordNotification);
     }

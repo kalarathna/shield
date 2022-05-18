@@ -10,6 +10,8 @@ import org.springframework.cache.annotation.EnableCaching;
 @EntityScan
 public class ShieldApplication {
 
+
+
     public static void main(String[] args) {
 
         SpringApplication.run(ShieldApplication.class, args);
