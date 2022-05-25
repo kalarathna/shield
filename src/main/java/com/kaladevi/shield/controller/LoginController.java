@@ -21,7 +21,6 @@ public class LoginController {
     @PostMapping(value="/shield/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public LoginModel login(@RequestBody LoginModel loginModel){
         return loginService.validateLoginCredentials(loginModel);
-
     }
 
     @PostMapping(value ="/shield/createuser", consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -29,9 +28,14 @@ public class LoginController {
     public LoginModel createUser(@RequestBody UserContentDetails userDetails){
 
         System.out.println(userDetails.getEmail());
-
          return loginService.createUser(userDetails);
 
+    }
+
+    @PostMapping(value ="/shield/verifyOTP", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public LoginModel verifyOTP(@RequestParam("userName") String userName, @RequestParam("code") String code){
+       return loginService.verifyOTP(userName,code);
     }
 
 }

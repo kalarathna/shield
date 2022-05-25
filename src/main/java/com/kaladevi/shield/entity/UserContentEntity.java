@@ -4,8 +4,11 @@ package com.kaladevi.shield.entity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import javax.persistence.*;
+import java.sql.Date;
 import java.util.UUID;
 
 @Getter
@@ -30,14 +33,25 @@ public class UserContentEntity {
     @Column(name="file_size")
     public Long fileSize;
 
-    @Column(name="document_name")
+    @Column(name="document_size")
+    public Long documentSize;
+
+    @Column(name="document_name", unique = true )
     public String documentName;
 
     @Column(name="document_content")
-    public String documentContent;
+    public byte[] documentContent;
 
-    @Column(name="upload_file_name")
+    @Column(name="upload_file_name", unique = true)
     public String uploadFileName;
+
+    @CreatedDate
+    @Column(name="created_date")
+    public Date createdDate;
+
+    @LastModifiedDate
+    @Column(name="updated_date")
+    public Date updatedDate;
 
     public UserContentEntity() {
         super();

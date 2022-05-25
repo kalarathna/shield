@@ -8,9 +8,11 @@ import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.repositories.PasswordNotificationRepo;
 import com.kaladevi.shield.repositories.UserContentRepo;
 import com.kaladevi.shield.repositories.UserDetailsRepo;
+import org.apache.commons.io.IOUtils;
 import org.apache.tomcat.jni.Local;
 import org.hibernate.validator.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,8 +21,8 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.transaction.Transactional;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.Period;
@@ -54,6 +56,7 @@ public class UploadServiceImpl implements UploadService{
             byte[] file = userContent.getFile().getBytes();
             UserContentEntity userContentEntity = new UserContentEntity();
             userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUsername()));
+            userContentEntity.setUploadFileName(userContent.getUploadFileName());
             userContentEntity.setFiles(file);
             userContentRepo.save(userContentEntity);
         }
@@ -66,19 +69,27 @@ public class UploadServiceImpl implements UploadService{
 
     @Override
     @Transactional
-    public String saveText(UserContent userContent){
+    public UserContent saveText(UserContent userContent){
+        UserContent userContent1= new UserContent();
         try {
+            byte[] document = userContent.getDocumentContent().getBytes();
+
             UserContentEntity userContentEntity = new UserContentEntity();
             userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUsername()));
             userContentEntity.setDocumentName(userContent.getDocumentName());
-            userContentEntity.setDocumentContent(userContent.getDocumentContent());
+            userContentEntity.setDocumentContent(document);
             userContentRepo.save(userContentEntity);
+            userContent1.setDocumentName(userContent.getDocumentName());
+            userContent1.setDocumentSize(userContent.getDocumentSize());
+            userContent1.setDocumentContent(userContent.getDocumentContent());
+            userContent1.setErrorFlg(false);
+
         }
         catch (Exception e){
             e.printStackTrace();
             System.out.println(e.getMessage());
         }
-        return "success";
+        return userContent1;
     }
 
     public String deleteFile(UserContent userContent){
@@ -87,31 +98,40 @@ public class UploadServiceImpl implements UploadService{
 
     public List<UserContent> getUserContent(String username){
 
+        List<String> fileNameList= new ArrayList<>();
+        List<Long> fileSizeList = new ArrayList<>();
         List<UserContent> userContentList= new ArrayList<>();
         UserContent userContent= new UserContent();
         UserDetailsEntity userDetailsEntity= userDetailsRepo.findUserDetailsEntityIdByEmail(username);
+        if(Objects.nonNull(userDetailsEntity)) {
+            List<UserContentEntity> userContentEntity = userContentRepo.findAllByUserDetailsIdUserDetailsId(userDetailsEntity.getUserDetailsId());
+            if (Objects.nonNull(userContentEntity)) {
+                for (UserContentEntity userContents : userContentEntity) {
+                    userContent.setUsername(username);
+                    userContent.setUserContentID(userContents.getUserContentId());
+                    if(Objects.nonNull(userContents.getUploadFileName())){
+                        userContent.setUploadFileName(userContents.getUploadFileName());
+                        userContent.setFileSize(userContents.getFileSize());
+                        fileNameList.add(userContents.getUploadFileName());
+                        fileSizeList.add(userContents.getFileSize());
+                    }
+                    if(Objects.nonNull(userContents.getDocumentName())){
+                        userContent.setDocumentName(userContents.getDocumentName());
+                        fileNameList.add(userContents.getDocumentName());
+                        fileSizeList.add(userContents.getDocumentSize());
+                        }
+                    userContent.setFileNames(fileNameList);
+                    userContent.setFileSizes(fileSizeList);
+//                   String p = ServletUriComponentsBuilder.fromCurrentContextPath()
+//                            .path("/files/")
+//                            .path(userContents.getFiles().toString())
+//                            .toUriString();
+//                    userContent.setDownloadFile(p);
+                }
 
-            List<UserContentEntity> userContentEntity= userContentRepo.findAllByUserDetailsId(userDetailsEntity.getUserDetailsId());
-            if(Objects.nonNull(userContentEntity)) {
-                for (UserContentEntity userContents:userContentEntity) {
-                    userContent.setDocumentName(userContents.getDocumentName());
-                    userContent.setDocumentContent(userContents.getDocumentContent());
-                    userContent.setUploadFileName(userContents.getUploadFileName());
-                    userContent.setFileSize(userContents.getFileSize());
-                    String p= ServletUriComponentsBuilder.fromCurrentContextPath()
-                            .path("/files/")
-                            .path(userContents.getFiles().toString())
-                            .toUriString();
-                    userContent.setDownloadFile(p);
-                }  userContentList.add(userContent);
-              //  String path = this.getClass().getClassLoader().getResource("/file").toString();
-//                try {
-////                    FileOutputStream fileOutputStream= new FileOutputStream(path);
-////                    fileOutputStream.write(userContentEntity.getFiles());
-//                }catch (Exception e){
-//                    e.printStackTrace();
-//                }
+                userContentList.add(userContent);
             }
+        }
         return userContentList;
     }
 
@@ -183,5 +203,58 @@ public class UploadServiceImpl implements UploadService{
         passwordNotificationRepo.save(passwordNotificationEntity);
 
         return "success";
+    }
+
+    @Transactional
+    public String shareContent(String userName,String shareEmail,String documentName){
+        UserDetailsEntity userDetailsEntity=userDetailsRepo.findUserDetailsEntityIdByEmail(userName);
+        UserContentEntity userContentEntity= new UserContentEntity();
+        UserContentEntity saveUserContentEntity= new UserContentEntity();
+        if(Objects.nonNull(userDetailsEntity)){
+            userContentEntity= userContentRepo.findAllByUserDetailsIdAndDocumentName(userDetailsEntity.getUserDetailsId(),documentName);
+            if(Objects.nonNull(userContentEntity)){
+                UserDetailsEntity userDetailsEntity1= userDetailsRepo.findUserDetailsEntityIdByEmail(shareEmail);
+                if(Objects.nonNull(userDetailsEntity1)){
+                    saveUserContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(shareEmail));
+                    saveUserContentEntity.setDocumentName(userContentEntity.getDocumentName());
+                    saveUserContentEntity.setDocumentContent(userContentEntity.getDocumentContent());
+                    saveUserContentEntity.setFiles(userContentEntity.getFiles());
+                    saveUserContentEntity.setUploadFileName(userContentEntity.getUploadFileName());
+                    saveUserContentEntity.setFileSize(userContentEntity.getFileSize());
+                    userContentRepo.save(saveUserContentEntity);
+                    return "success";
+                }
+            }
+
+        }
+        return "success";
+    }
+    public String downloadContent(String userName, String userContentId) throws IOException{
+       UserDetailsEntity userDetailsEntity=userDetailsRepo.findUserDetailsEntityIdByEmail(userName);
+       UserContentEntity userContentEntity= new UserContentEntity();
+        UUID userContentsId=UUID.fromString(userContentId);
+        if(Objects.nonNull(userDetailsEntity)){
+            userContentEntity=userContentRepo.findAllByUserContentId(userContentsId);
+            if(Objects.nonNull(userContentEntity)){
+                if(Objects.nonNull(userContentEntity.getFiles())){
+
+                    InputStream inputStream= new ByteArrayInputStream(userContentEntity.getFiles());
+                            //Thread.currentThread().getContextClassLoader().getResourceAsStream(file);
+                    if(inputStream==null){
+                        throw  new FileNotFoundException("file unavailable");
+                    }
+                    return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                }
+                if(Objects.nonNull(userContentEntity.getDocumentContent())){
+                    InputStream inputStream= new ByteArrayInputStream(userContentEntity.getDocumentContent());
+                    if(inputStream==null){
+                        throw  new FileNotFoundException("file unavailable");
+                    }
+                    return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                }
+            }
+        }
+        return null;
+
     }
 }

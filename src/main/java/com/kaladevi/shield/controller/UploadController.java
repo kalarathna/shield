@@ -1,18 +1,19 @@
 package com.kaladevi.shield.controller;
 
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.kaladevi.shield.model.PasswordNotification;
 import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
@@ -35,8 +36,12 @@ public class UploadController {
     }
 
     @PostMapping(value = "/shield/savefile", produces = "application/json")
-    public String saveFile(@RequestBody UserContent userContent){
-        return uploadService.saveText(userContent);
+    public @ResponseBody
+    String saveFile(@RequestBody UserContent userContent){
+        String response="";
+        Gson gson =new GsonBuilder().setDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'").create();
+        response=gson.toJson(uploadService.saveText(userContent));
+        return response ;
     }
 
     @PostMapping(value="/shield/deletefile", produces = "application/json")
@@ -46,8 +51,12 @@ public class UploadController {
     }
 
     @PostMapping(value ="/shield/getcontent", produces = "application/json" )
-    public List<UserContent> getUserContent(String username){
-        return uploadService.getUserContent(username);
+    public @ResponseBody String getUserContent(@RequestBody String userName){
+        String response="";
+        List<UserContent> userContentList= uploadService.getUserContent(userName);
+        Gson gson =new GsonBuilder().setDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'").create();
+        response=gson.toJson(userContentList);
+        return response;
     }
 
     @PostMapping(value  ="/shield/sendemail", produces = "application/json")
@@ -58,6 +67,19 @@ public class UploadController {
     @PostMapping(value  ="/shield/savepassword", produces = "application/json")
     public String savePasswordNotification(@RequestBody PasswordNotification passwordNotification){
         return uploadService.savePasswordExpiryNotification(passwordNotification);
+    }
+
+    @PostMapping(value="/shield/sharecontent", produces="applictaion/json")
+    public String shareContent(@RequestParam("userName") String userName, @RequestParam("shareEmail") String shareEmail, @RequestParam("documentName") String documentName){
+        return uploadService.shareContent(userName,shareEmail,documentName);
+    }
+
+    @PostMapping(value="/shield/downloadcontent", produces="application/json")
+    public String downloadContent(@RequestParam("userName") String userName, @RequestParam("userContentId") String userContentId)throws IOException {
+
+        return uploadService.downloadContent(userName,userContentId);
+
+
     }
 
 }
