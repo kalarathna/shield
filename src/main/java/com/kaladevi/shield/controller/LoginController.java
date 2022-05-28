@@ -1,6 +1,7 @@
 package com.kaladevi.shield.controller;
 
 import com.kaladevi.shield.model.LoginModel;
+import com.kaladevi.shield.model.OtpModel;
 import com.kaladevi.shield.model.UserContentDetails;
 import com.kaladevi.shield.service.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,9 @@ public class LoginController {
 
     @PostMapping(value ="/shield/verifyOTP", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public LoginModel verifyOTP(@RequestParam("userName") String userName, @RequestParam("code") String code){
+    public LoginModel verifyOTP(@RequestBody OtpModel otpModel){
+        String userName=otpModel.getUserName();
+        String code=otpModel.getOtpCode();
        return loginService.verifyOTP(userName,code);
     }
 

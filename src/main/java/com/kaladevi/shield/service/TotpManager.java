@@ -10,12 +10,16 @@ import dev.samstevens.totp.secret.SecretGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import dev.samstevens.totp.time.TimeProvider;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import static dev.samstevens.totp.util.Utils.getDataUriForImage;
+
 
 @Service
 @Slf4j
 public class TotpManager {
+
+    private static Base64 base64Codec = new Base64();
 
     public String generateSecret() {
         SecretGenerator generator = new DefaultSecretGenerator();
@@ -43,9 +47,14 @@ public class TotpManager {
 
         String mimeType = generator.getImageMimeType();
 
-        return getDataUriForImage(imageData, mimeType);
+        return getDataUriForImageTOTP(imageData, mimeType);
     }
 
+    public static String getDataUriForImageTOTP(byte[] data, String mimeType) {
+        String encodedData = new String(base64Codec.encode(data));
+
+        return String.format(encodedData);
+    }
     public boolean verifyCode(String code, String secret) {
         TimeProvider timeProvider = new SystemTimeProvider();
         CodeGenerator codeGenerator = new DefaultCodeGenerator();

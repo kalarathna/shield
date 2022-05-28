@@ -8,6 +8,8 @@ import com.kaladevi.shield.repositories.UserDetailsRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -34,11 +36,14 @@ public class LoginServiceImpl implements LoginService {
     @Autowired
     private JwtTokenManager jwtTokenManager;
 
-//    @Autowired
-//    private AuthenticationManager authenticationManager;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
-//    @Autowired
-//    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserDetailsService jwtInMemoryUserDetailsService;
+
+      @Autowired
+    private PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -59,22 +64,23 @@ public class LoginServiceImpl implements LoginService {
                 returnLoginModel.setLoginUUID(userDetailsEntity.getUserDetailsId());
                 returnLoginModel.setUserName(userDetailsEntity.getEmail());
                 returnLoginModel.setStatus("Success");
+                if(userDetailsEntity.getEnableMFA()){
 
-//                if(userDetailsEntity.getEnableMFA()){
-//                    loginModel.setSecretImageURI(totpManager.getUriForImage(totpManager.generateSecret()));
-//
-//                }
-                loginModel.setErrorFlg(false);
+                    returnLoginModel.setSecretImageURI(totpManager.getUriForImage(totpManager.generateSecret()));
+                    System.out.println(returnLoginModel.getSecretImageURI());
+
+                }
+                returnLoginModel.setErrorFlg(false);
                 return returnLoginModel;
 
             } else {
                 returnLoginModel.setStatus("Failure");
-                loginModel.setErrorFlg(true);
+                returnLoginModel.setErrorFlg(true);
                 return returnLoginModel;
             }
         }
         returnLoginModel.setStatus("userNotFound");
-        loginModel.setErrorFlg(true);
+        returnLoginModel.setErrorFlg(true);
         return returnLoginModel;
     }
 
@@ -92,7 +98,7 @@ public class LoginServiceImpl implements LoginService {
                 userDetailsEntity.setFirstName(userDetails.getFirstName());
                 userDetailsEntity.setLastName(userDetails.getLastName());
                 userDetailsEntity.setEmail(userDetails.getEmail());
-                userDetailsEntity.setPassword(userDetails.getPassword());
+                userDetailsEntity.setPassword(passwordEncoder.encode(userDetails.getPassword()));
                 entityManager.persist(userDetailsEntity);
                 UserDetailsEntity userDetailsEntity2 = checkExistingUserByEmail(userDetails.getEmail());
                 loginModel.setLoginUUID(userDetailsEntity2.getUserDetailsId());
@@ -124,6 +130,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     public LoginModel verifyOTP(String userName, String code) {
+        String token=verify(userName,code);
         LoginModel returnLoginModel = new LoginModel();
         UserDetailsEntity userDetailsEntity = checkExistingUserByEmail(userName.trim().toLowerCase(Locale.ROOT));
         if (Objects.nonNull(userDetailsEntity)) {
@@ -131,6 +138,7 @@ public class LoginServiceImpl implements LoginService {
             returnLoginModel.setLoginUUID(userDetailsEntity.getUserDetailsId());
             returnLoginModel.setUserName(userDetailsEntity.getEmail());
             returnLoginModel.setStatus("Success");
+            returnLoginModel.setJwtToken(token);
             return returnLoginModel;
         }
         returnLoginModel.setStatus("userNotFound");
@@ -139,46 +147,31 @@ public class LoginServiceImpl implements LoginService {
 
     }
 //
-//    public LoginModel verify(String userName, String code) {
-//        LoginModel loginModel = new LoginModel();
-//        UserDetailsEntity userDetailsEntity = checkExistingUserByEmail(userName.trim().toLowerCase(Locale.ROOT));
-//        try {
-//
-//            if (Objects.nonNull(userDetailsEntity)) {
-//
-//                if (!totpManager.verifyCode(code, userDetailsEntity.getSecretKey())) {
-//
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            System.out.println(e.getMessage());
-//
-//        }//
-//        loginModel.setLoginUUID(userDetailsEntity.getUserDetailsId());
-//        loginModel.setFirstName(userDetailsEntity.getFirstName());
-//        loginModel.setUserName(userDetailsEntity.getEmail());
-//        loginModel.setStatus("saved");
-//        loginModel.setErrorFlg(false);
-//
-//        Authentication authentication = authenticationManager
-//                .authenticate(new UsernamePasswordAuthenticationToken(userDetailsEntity.getEmail(), userDetailsEntity.getPassword()));
-//        loginModel.setJwtToken(jwtTokenManager.generateToken(authentication));
-//
-//        return loginModel;
-//
-//    }
+    public String verify(String userName, String code) {
+        LoginModel loginModel = new LoginModel();
+        UserDetailsEntity userDetailsEntity = checkExistingUserByEmail(userName.trim().toLowerCase(Locale.ROOT));
+        try {
 
+            if (Objects.nonNull(userDetailsEntity)) {
 
+                if (!totpManager.verifyCode(code, userDetailsEntity.getSecretKey())) {
 
-//    public Optional<UserDetailsEntity> findByUsername(String username) {
-//
-//                      Optional<UserDetailsEntity> userDetailsEntityOpt= Optional.of( userDetailsRepo.findUserDetailsEntityIdByEmail(username));
-//                      return  userDetailsEntityOpt;
-//    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
 
+        }
+        Authentication authentication=  new UsernamePasswordAuthenticationToken(userName, null);
+//        final UserDetails userDetails = jwtInMemoryUserDsetailsService
+//                .loadUserByUsername(userName);
 
+        String token = jwtTokenManager.generateToken(authentication);
 
+        return token;
+
+    }
 
 }
 
