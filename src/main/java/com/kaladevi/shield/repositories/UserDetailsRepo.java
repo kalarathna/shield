@@ -13,7 +13,9 @@ import java.util.UUID;
 public interface UserDetailsRepo extends JpaRepository<UserDetailsEntity, Long >{
 
     @Query("select u from UserDetailsEntity u where u.email= :email")
-    public UserDetailsEntity findUserDetailsEntityIdByEmail(@Param("email") String email);
+    public UserDetailsEntity findUserDetailsEntityIdByEmail(@Param("email") String userName);
+
+
 
 
 

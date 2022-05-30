@@ -4,7 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -13,17 +15,18 @@ public class UserContent {
 
 
     private UUID userDetailsId;
-    private String username;
+    private String userName;
     private MultipartFile  file;
-    private String uploadFileName;
     private String documentName;
-    private String documentContent;
+    private MultipartFile documentContent;
     private String documentSize;
     private String downloadFile;
     private Long fileSize;
     private Boolean errorFlg;
     private UUID userContentID;
-    private List<String> fileNames;
-    private List<Long> fileSizes;
+    private String expiryDate;
+    private List<Files> fileDetails;
+   // private List<Long> fileSizes;
+   // private Map<String,Long> FileDetails;
 
 }

@@ -3,27 +3,22 @@ package com.kaladevi.shield.service;
 import com.kaladevi.shield.entity.PasswordNotificationEntity;
 import com.kaladevi.shield.entity.UserContentEntity;
 import com.kaladevi.shield.entity.UserDetailsEntity;
+import com.kaladevi.shield.model.Files;
 import com.kaladevi.shield.model.PasswordNotification;
 import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.repositories.PasswordNotificationRepo;
 import com.kaladevi.shield.repositories.UserContentRepo;
 import com.kaladevi.shield.repositories.UserDetailsRepo;
 import org.apache.commons.io.IOUtils;
-import org.apache.tomcat.jni.Local;
-import org.hibernate.validator.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.transaction.Transactional;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -51,16 +46,26 @@ public class UploadServiceImpl implements UploadService{
 
     @Override
     @Transactional
-    public String uploadFile(UserContent userContent) {
+    public String uploadFile(MultipartFile  file, String expiryDate, String userName) {
         try {
-            byte[] file = userContent.getFile().getBytes();
             UserContentEntity userContentEntity = new UserContentEntity();
-            userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUsername()));
-            userContentEntity.setUploadFileName(userContent.getUploadFileName());
-            userContentEntity.setFiles(file);
+            byte[] uploadFile = file.getBytes();
+            long documentSize=file.getSize();
+            userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userName));
+            userContentEntity.setDocumentName(file.getName());
+            userContentEntity.setDocumentContent(uploadFile);
+            SimpleDateFormat format= new SimpleDateFormat("dd-MM-yyyy");
+            DateTimeFormatter dateTimeFormatter= DateTimeFormatter.ofPattern("dd-MM-yyyy");
+//            if(Objects.nonNull(userContent.getFileExpiryDate())) {
+//                Date date = Date.valueOf(dateTimeFormatter.parse(userContent.getFileExpiryDate()).toString());
+//                userContentEntity.setExpiryDate(date);
+//            }
+
+            userContentEntity.setDocumentSize(documentSize);
+            userContentEntity.setIsUploaded(true);
             userContentRepo.save(userContentEntity);
         }
-        catch(IOException e){
+        catch(Exception e){
             e.printStackTrace();
             System.out.println(e.getMessage());
         }
@@ -73,11 +78,19 @@ public class UploadServiceImpl implements UploadService{
         UserContent userContent1= new UserContent();
         try {
             byte[] document = userContent.getDocumentContent().getBytes();
+            long documentSize=userContent.getDocumentContent().getSize();
 
             UserContentEntity userContentEntity = new UserContentEntity();
-            userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUsername()));
-            userContentEntity.setDocumentName(userContent.getDocumentName());
+            userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUserName()));
+            userContentEntity.setDocumentName(userContent.getDocumentContent().getName());
             userContentEntity.setDocumentContent(document);
+            userContentEntity.setExpiryDate(Date.valueOf(userContent.getExpiryDate()));
+            userContentEntity.setDocumentSize(documentSize);
+//            if(Objects.nonNull(userContent.getFileExpiryDate())) {
+//                Date date = Date.valueOf(userContent.getFileExpiryDate());
+//                userContentEntity.setExpiryDate(date);
+//            }
+            userContentEntity.setIsUploaded(false);
             userContentRepo.save(userContentEntity);
             userContent1.setDocumentName(userContent.getDocumentName());
             userContent1.setDocumentSize(userContent.getDocumentSize());
@@ -96,43 +109,39 @@ public class UploadServiceImpl implements UploadService{
             return null;
     }
 
-    public List<UserContent> getUserContent(String username){
+    public UserContent getUserContent(String userName){
 
-        List<String> fileNameList= new ArrayList<>();
-        List<Long> fileSizeList = new ArrayList<>();
+        List<Files> fileDetailList= new ArrayList<Files>();
+
+        LocalDate date = null;
         List<UserContent> userContentList= new ArrayList<>();
+        Map<String,Long> fileDetailsMap = new HashMap<>();
         UserContent userContent= new UserContent();
-        UserDetailsEntity userDetailsEntity= userDetailsRepo.findUserDetailsEntityIdByEmail(username);
+        UserDetailsEntity userDetailsEntity= userDetailsRepo.findUserDetailsEntityIdByEmail(userName);
         if(Objects.nonNull(userDetailsEntity)) {
             List<UserContentEntity> userContentEntity = userContentRepo.findAllByUserDetailsIdUserDetailsId(userDetailsEntity.getUserDetailsId());
             if (Objects.nonNull(userContentEntity)) {
                 for (UserContentEntity userContents : userContentEntity) {
-                    userContent.setUsername(username);
-                    userContent.setUserContentID(userContents.getUserContentId());
-                    if(Objects.nonNull(userContents.getUploadFileName())){
-                        userContent.setUploadFileName(userContents.getUploadFileName());
-                        userContent.setFileSize(userContents.getFileSize());
-                        fileNameList.add(userContents.getUploadFileName());
-                        fileSizeList.add(userContents.getFileSize());
-                    }
-                    if(Objects.nonNull(userContents.getDocumentName())){
-                        userContent.setDocumentName(userContents.getDocumentName());
-                        fileNameList.add(userContents.getDocumentName());
-                        fileSizeList.add(userContents.getDocumentSize());
-                        }
-                    userContent.setFileNames(fileNameList);
-                    userContent.setFileSizes(fileSizeList);
-//                   String p = ServletUriComponentsBuilder.fromCurrentContextPath()
-//                            .path("/files/")
-//                            .path(userContents.getFiles().toString())
-//                            .toUriString();
-//                    userContent.setDownloadFile(p);
-                }
+                    Files files= new Files();
+                    userContent.setUserName(userName);
 
-                userContentList.add(userContent);
+                    if(Objects.nonNull(userContents.getDocumentName())){
+                        if(Objects.nonNull(userContents.getExpiryDate())) {
+                            date = userContents.getExpiryDate().toLocalDate();
+                        }
+
+                        files.setFileName(userContents.getDocumentName());
+                        files.setFileSizes(userContents.getDocumentSize());
+                        files.setFileExpiryDate(String.format(date.toString(), "dd-MM-yyyy"));
+                        files.setUserContentId(userContents.getUserContentId().toString());
+                    }
+                    fileDetailList.add(files);
+                }
+                userContent.setFileDetails(fileDetailList);
+
             }
         }
-        return userContentList;
+        return userContent;
     }
 
      public String sendPasswordExpiryNotification(String username){
@@ -218,9 +227,9 @@ public class UploadServiceImpl implements UploadService{
                     saveUserContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(shareEmail));
                     saveUserContentEntity.setDocumentName(userContentEntity.getDocumentName());
                     saveUserContentEntity.setDocumentContent(userContentEntity.getDocumentContent());
-                    saveUserContentEntity.setFiles(userContentEntity.getFiles());
-                    saveUserContentEntity.setUploadFileName(userContentEntity.getUploadFileName());
-                    saveUserContentEntity.setFileSize(userContentEntity.getFileSize());
+                    saveUserContentEntity.setDocumentContent(userContentEntity.getDocumentContent());
+                    saveUserContentEntity.setDocumentName(userContentEntity.getDocumentName());
+                    saveUserContentEntity.setDocumentSize(userContentEntity.getDocumentSize());
                     userContentRepo.save(saveUserContentEntity);
                     return "success";
                 }
@@ -236,9 +245,10 @@ public class UploadServiceImpl implements UploadService{
         if(Objects.nonNull(userDetailsEntity)){
             userContentEntity=userContentRepo.findAllByUserContentId(userContentsId);
             if(Objects.nonNull(userContentEntity)){
-                if(Objects.nonNull(userContentEntity.getFiles())){
+                if(Objects.nonNull(userContentEntity.getDocumentContent())){
 
-                    InputStream inputStream= new ByteArrayInputStream(userContentEntity.getFiles());
+
+                    InputStream inputStream= new ByteArrayInputStream(userContentEntity.getDocumentContent());
                             //Thread.currentThread().getContextClassLoader().getResourceAsStream(file);
                     if(inputStream==null){
                         throw  new FileNotFoundException("file unavailable");

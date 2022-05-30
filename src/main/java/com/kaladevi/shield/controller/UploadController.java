@@ -6,13 +6,14 @@ import com.google.gson.GsonBuilder;
 import com.kaladevi.shield.model.PasswordNotification;
 import com.kaladevi.shield.model.UserContent;
 import com.kaladevi.shield.service.UploadService;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.mail.Multipart;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -24,18 +25,15 @@ public class UploadController {
     UploadService uploadService;
 
 
-    @PostMapping(value = "/shield/uploadfile", produces="application/json")
-    public String uploadFiles(@RequestParam("multipartFile") MultipartFile file, @RequestParam("email") String email )throws Exception{
-        UserContent userContent= new UserContent();
-        userContent.setUsername(email);
-        userContent.setFile(file);
-//        byte[] byteFile = userContent.getFile().getBytes();
-//        userContent.setFile(byteFile);
-       return uploadService.uploadFile(userContent);
+    @PostMapping(value = "/shield/uploadfile", produces="multipart/form-data")
+    public String uploadFiles(@RequestParam("file") MultipartFile file, @RequestParam("expiryDate") String expiryDate, @RequestParam("userName") String userName)throws Exception{
+
+
+       return uploadService.uploadFile(file, expiryDate,userName);
 
     }
 
-    @PostMapping(value = "/shield/savefile", produces = "application/json")
+    @PostMapping(value = "/shield/savefile", produces = "multipart/form-data")
     public @ResponseBody
     String saveFile(@RequestBody UserContent userContent){
         String response="";
@@ -53,7 +51,7 @@ public class UploadController {
     @PostMapping(value ="/shield/getcontent", produces = "application/json" )
     public @ResponseBody String getUserContent(@RequestBody String userName){
         String response="";
-        List<UserContent> userContentList= uploadService.getUserContent(userName);
+        UserContent userContentList= uploadService.getUserContent(userName);
         Gson gson =new GsonBuilder().setDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'").create();
         response=gson.toJson(userContentList);
         return response;

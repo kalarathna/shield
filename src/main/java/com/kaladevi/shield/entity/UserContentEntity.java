@@ -27,23 +27,21 @@ public class UserContentEntity {
     @JoinColumn(name="user_details_id", referencedColumnName = "user_details_id", nullable = false)
     private UserDetailsEntity userDetailsId;
 
-    @Column(name="files")
-    public byte[] files;
-
-    @Column(name="file_size")
-    public Long fileSize;
-
     @Column(name="document_size")
     public Long documentSize;
 
-    @Column(name="document_name", unique = true )
+    @Column(name="document_name")
     public String documentName;
 
     @Column(name="document_content")
     public byte[] documentContent;
 
-    @Column(name="upload_file_name", unique = true)
-    public String uploadFileName;
+    @Column(name="is_uploaded")
+    public Boolean isUploaded;
+
+    @CreatedDate
+    @Column(name="expiry_date")
+    public Date expiryDate;
 
     @CreatedDate
     @Column(name="created_date")
@@ -57,10 +55,11 @@ public class UserContentEntity {
         super();
     }
 
-    public UserContentEntity(UUID userContentId, byte[] files) {
+    public UserContentEntity(UUID userContentId, byte[] documentContent) {
         super();
         this.userContentId = userContentId;
-        this.files = files;
+        this.documentContent=documentContent;
+
     }
 
 

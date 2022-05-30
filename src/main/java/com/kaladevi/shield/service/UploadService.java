@@ -12,10 +12,10 @@ import java.util.List;
 
 public interface UploadService {
 
-    public String uploadFile(UserContent userContent);
+    public String uploadFile(MultipartFile file, String expiryDate, String userName);
     public UserContent saveText(UserContent userContent);
     public String deleteFile(UserContent userContent);
-    public List<UserContent> getUserContent(String username);
+    public UserContent getUserContent(String username);
     public String sendPasswordExpiryNotification(String username);
     public String savePasswordExpiryNotification(PasswordNotification passwordNotification );
 
