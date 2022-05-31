@@ -12,14 +12,15 @@ import java.util.List;
 
 public interface UploadService {
 
-    public String uploadFile(MultipartFile file, String expiryDate, String userName);
-    public UserContent saveText(UserContent userContent);
-    public String deleteFile(UserContent userContent);
+    public String uploadFile(MultipartFile file, String expiryDate, String userName, String documentName);
+   // public UserContent saveText(UserContent userContent);
+    public String deleteFile(String userContentId);
     public UserContent getUserContent(String username);
     public String sendPasswordExpiryNotification(String username);
     public String savePasswordExpiryNotification(PasswordNotification passwordNotification );
 
-    public String shareContent(String userName,String shareEmail,String documentName);
+    public String shareContent(String userName,String shareEmail,String documentId);
+    public List<PasswordNotification> getAllPasswordList(String userName);
 
     public String downloadContent(String userName, String userContentId) throws IOException;
 

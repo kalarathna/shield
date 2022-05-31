@@ -11,7 +11,7 @@ import java.util.Date;
 public class Files {
 
     private String fileName;
-    private long fileSizes;
+    private String fileSizes;
     private String fileExpiryDate;
     private String userContentId;
 }

@@ -3,6 +3,7 @@ package com.kaladevi.shield.repositories;
 import com.kaladevi.shield.entity.UserContentEntity;
 import com.kaladevi.shield.model.UserContent;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +19,10 @@ public interface UserContentRepo extends JpaRepository<UserContentEntity, Long> 
 
     @Query(value = "select u from UserContentEntity  u where u.userContentId=:userContentId")
     public UserContentEntity findAllByUserContentId(UUID userContentId);
+
+    @Modifying
+    @Query(value="delete from UserContentEntity u where u.userContentId=:userContentId")
+    public void deleteContent(@Param("userContentId") UUID userContentId);
 
 
 }

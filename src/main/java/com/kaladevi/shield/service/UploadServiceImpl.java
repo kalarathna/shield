@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -46,21 +47,19 @@ public class UploadServiceImpl implements UploadService{
 
     @Override
     @Transactional
-    public String uploadFile(MultipartFile  file, String expiryDate, String userName) {
+    public String uploadFile(MultipartFile  file, String expiryDate, String userName, String documentName) {
+        Date d;
         try {
             UserContentEntity userContentEntity = new UserContentEntity();
             byte[] uploadFile = file.getBytes();
             long documentSize=file.getSize();
             userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userName));
-            userContentEntity.setDocumentName(file.getName());
+            userContentEntity.setDocumentName(documentName);
             userContentEntity.setDocumentContent(uploadFile);
-            SimpleDateFormat format= new SimpleDateFormat("dd-MM-yyyy");
-            DateTimeFormatter dateTimeFormatter= DateTimeFormatter.ofPattern("dd-MM-yyyy");
-//            if(Objects.nonNull(userContent.getFileExpiryDate())) {
-//                Date date = Date.valueOf(dateTimeFormatter.parse(userContent.getFileExpiryDate()).toString());
-//                userContentEntity.setExpiryDate(date);
-//            }
-
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy", Locale.ENGLISH);
+            LocalDate localCreateDate = LocalDate.parse(expiryDate.toString(), formatter);
+            d=Date.valueOf(localCreateDate);
+            userContentEntity.setExpiryDate(d);
             userContentEntity.setDocumentSize(documentSize);
             userContentEntity.setIsUploaded(true);
             userContentRepo.save(userContentEntity);
@@ -72,42 +71,54 @@ public class UploadServiceImpl implements UploadService{
         return "success";
     }
 
-    @Override
+//    @Override
+//    @Transactional
+//    public UserContent saveText(UserContent userContent){
+//        UserContent userContent1= new UserContent();
+//        try {
+//            byte[] document = userContent.getDocumentContent().getBytes();
+//            long documentSize=userContent.getDocumentContent().getSize();
+//
+//            UserContentEntity userContentEntity = new UserContentEntity();
+//            userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUserName()));
+//            userContentEntity.setDocumentName(userContent.getDocumentContent().getName());
+//            userContentEntity.setDocumentContent(document);
+//            userContentEntity.setExpiryDate(Date.valueOf(userContent.getExpiryDate()));
+//            userContentEntity.setDocumentSize(documentSize);
+////            if(Objects.nonNull(userContent.getFileExpiryDate())) {
+////                Date date = Date.valueOf(userContent.getFileExpiryDate());
+////                userContentEntity.setExpiryDate(date);
+////            }
+//            userContentEntity.setIsUploaded(false);
+//            userContentRepo.save(userContentEntity);
+//            userContent1.setDocumentName(userContent.getDocumentName());
+//            userContent1.setDocumentSize(userContent.getDocumentSize());
+//            userContent1.setDocumentContent(userContent.getDocumentContent());
+//            userContent1.setErrorFlg(false);
+//
+//        }
+//        catch (Exception e){
+//            e.printStackTrace();
+//            System.out.println(e.getMessage());
+//        }
+//        return userContent1;
+//    }
+
     @Transactional
-    public UserContent saveText(UserContent userContent){
-        UserContent userContent1= new UserContent();
-        try {
-            byte[] document = userContent.getDocumentContent().getBytes();
-            long documentSize=userContent.getDocumentContent().getSize();
+    public String deleteFile(String userContentId){
 
-            UserContentEntity userContentEntity = new UserContentEntity();
-            userContentEntity.setUserDetailsId(userDetailsRepo.findUserDetailsEntityIdByEmail(userContent.getUserName()));
-            userContentEntity.setDocumentName(userContent.getDocumentContent().getName());
-            userContentEntity.setDocumentContent(document);
-            userContentEntity.setExpiryDate(Date.valueOf(userContent.getExpiryDate()));
-            userContentEntity.setDocumentSize(documentSize);
-//            if(Objects.nonNull(userContent.getFileExpiryDate())) {
-//                Date date = Date.valueOf(userContent.getFileExpiryDate());
-//                userContentEntity.setExpiryDate(date);
-//            }
-            userContentEntity.setIsUploaded(false);
-            userContentRepo.save(userContentEntity);
-            userContent1.setDocumentName(userContent.getDocumentName());
-            userContent1.setDocumentSize(userContent.getDocumentSize());
-            userContent1.setDocumentContent(userContent.getDocumentContent());
-            userContent1.setErrorFlg(false);
-
+        UUID userContentID1=UUID.fromString(userContentId);
+        if(userContentId!=null){
+            UserContentEntity userContentEntity=userContentRepo.findAllByUserContentId(userContentID1);
+            if(Objects.nonNull(userContentEntity)){
+                userContentRepo.deleteContent(userContentID1);
+            }
+            return "success";
         }
-        catch (Exception e){
-            e.printStackTrace();
-            System.out.println(e.getMessage());
+        else{
+            return "failure";
         }
-        return userContent1;
-    }
-
-    public String deleteFile(UserContent userContent){
-            return null;
-    }
+        }
 
     public UserContent getUserContent(String userName){
 
@@ -124,15 +135,14 @@ public class UploadServiceImpl implements UploadService{
                 for (UserContentEntity userContents : userContentEntity) {
                     Files files= new Files();
                     userContent.setUserName(userName);
-
                     if(Objects.nonNull(userContents.getDocumentName())){
-                        if(Objects.nonNull(userContents.getExpiryDate())) {
-                            date = userContents.getExpiryDate().toLocalDate();
+                        files.setFileName(userContents.getDocumentName());
+                        Long fileSize=userContents.getDocumentSize()/1024;
+                        files.setFileSizes(fileSize+" KB");
+                        if(Objects.nonNull(userContents.getExpiryDate())){
+                            files.setFileExpiryDate(String.format(userContents.getExpiryDate().toString(), "dd-MM-yyyy"));
                         }
 
-                        files.setFileName(userContents.getDocumentName());
-                        files.setFileSizes(userContents.getDocumentSize());
-                        files.setFileExpiryDate(String.format(date.toString(), "dd-MM-yyyy"));
                         files.setUserContentId(userContents.getUserContentId().toString());
                     }
                     fileDetailList.add(files);
@@ -173,54 +183,63 @@ public class UploadServiceImpl implements UploadService{
 
 
      @Transactional
-    public String savePasswordExpiryNotification(PasswordNotification passwordNotification ){
-        int daysToAdd=90;
-        Date cd;
-        Date d;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate localCreateDate = LocalDate.parse(passwordNotification.getCreationDate(), formatter);
+    public String savePasswordExpiryNotification(PasswordNotification passwordNotification ) {
+         int daysToAdd = 90;
+         Date cd;
+         Date d;
+         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
 
-        LocalDate  expiryDate = localCreateDate.plusDays(daysToAdd);
-        PasswordNotificationEntity passwordNotificationEntity= new PasswordNotificationEntity();
-        PasswordNotificationEntity existingPasswordNotificationEntity=passwordNotificationRepo.findAllByUserDetailsId(passwordNotification.getUserID());
-        if(Objects.nonNull(existingPasswordNotificationEntity)){
-            if(existingPasswordNotificationEntity.getApplicationName().equalsIgnoreCase(passwordNotification.getApplicationName())) {
-                cd = Date.valueOf(localCreateDate);
-                passwordNotificationEntity.setCreationDate(cd);
-                d = Date.valueOf(expiryDate);
-                passwordNotificationEntity.setExpriryDate(d);
-                passwordNotificationEntity.setUserDetailsId(existingPasswordNotificationEntity.getUserDetailsId());
-                passwordNotificationRepo.save(passwordNotificationEntity);
-            }
-            else{
-                passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
-                cd=Date.valueOf(localCreateDate);
-                passwordNotificationEntity.setCreationDate(cd);
-                d= Date.valueOf(expiryDate);
-                passwordNotificationEntity.setExpriryDate(d);
-                passwordNotificationEntity.setUserDetailsId(existingPasswordNotificationEntity.getUserDetailsId());
-                passwordNotificationRepo.save(passwordNotificationEntity);
-            }
-        }
-        UserDetailsEntity userDetailsEntity=userDetailsRepo.findUserDetailsEntityIdByEmail(passwordNotification.getUserName());
-        passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
-        cd=Date.valueOf(localCreateDate);
-        passwordNotificationEntity.setCreationDate(cd);
-        d= Date.valueOf(expiryDate);
-        passwordNotificationEntity.setExpriryDate(d);
-        passwordNotificationEntity.setUserDetailsId(userDetailsEntity);
-        passwordNotificationRepo.save(passwordNotificationEntity);
+         LocalDateTime localCreateDate = LocalDateTime.parse(passwordNotification.getCreationDate().toString(), formatter);
 
-        return "success";
-    }
+         LocalDateTime expiryDate = localCreateDate.plusDays(daysToAdd);
+         PasswordNotificationEntity passwordNotificationEntity = new PasswordNotificationEntity();
+         UserDetailsEntity userDetailsEntity = userDetailsRepo.findUserDetailsEntityIdByEmail(passwordNotification.getUserName());
+
+         if (Objects.nonNull(userDetailsEntity)) {
+            List< PasswordNotificationEntity> existingPasswordNotificationEntity = passwordNotificationRepo.findAllByUserDetailsIdUserDetailsId(userDetailsEntity.getUserDetailsId());
+             if (Objects.nonNull(existingPasswordNotificationEntity)) {
+                 for(PasswordNotificationEntity passwordNotificationlist:existingPasswordNotificationEntity)
+
+                 if (passwordNotificationlist.getApplicationName().equalsIgnoreCase(passwordNotification.getApplicationName())) {
+                     cd = Date.valueOf(localCreateDate.toLocalDate());
+                     passwordNotificationEntity.setCreationDate(cd);
+                     d = Date.valueOf(expiryDate.toLocalDate());
+                     passwordNotificationEntity.setExpriryDate(d);
+                     passwordNotificationEntity.setUserDetailsId(passwordNotificationlist.getUserDetailsId());
+                     passwordNotificationRepo.save(passwordNotificationEntity);
+                 } else {
+                     passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
+                     cd = Date.valueOf(localCreateDate.toLocalDate());
+                     passwordNotificationEntity.setCreationDate(cd);
+                     d = Date.valueOf(expiryDate.toLocalDate());
+                     passwordNotificationEntity.setExpriryDate(d);
+                     passwordNotificationEntity.setUserDetailsId(passwordNotificationlist.getUserDetailsId());
+                     passwordNotificationRepo.save(passwordNotificationEntity);
+                 }
+
+             }
+             passwordNotificationEntity.setApplicationName(passwordNotification.getApplicationName());
+             cd = Date.valueOf(localCreateDate.toLocalDate());
+             passwordNotificationEntity.setCreationDate(cd);
+             d = Date.valueOf(expiryDate.toLocalDate());
+             passwordNotificationEntity.setExpriryDate(d);
+             passwordNotificationEntity.setUserDetailsId(userDetailsEntity);
+             passwordNotificationRepo.save(passwordNotificationEntity);
+
+             return "success";
+         } else {
+             return "failure";
+         }
+     }
 
     @Transactional
-    public String shareContent(String userName,String shareEmail,String documentName){
+    public String shareContent(String userName,String shareEmail,String documentId){
         UserDetailsEntity userDetailsEntity=userDetailsRepo.findUserDetailsEntityIdByEmail(userName);
         UserContentEntity userContentEntity= new UserContentEntity();
         UserContentEntity saveUserContentEntity= new UserContentEntity();
+        UUID userContentID=UUID.fromString(documentId);
         if(Objects.nonNull(userDetailsEntity)){
-            userContentEntity= userContentRepo.findAllByUserDetailsIdAndDocumentName(userDetailsEntity.getUserDetailsId(),documentName);
+            userContentEntity= userContentRepo.findAllByUserContentId(userContentID);
             if(Objects.nonNull(userContentEntity)){
                 UserDetailsEntity userDetailsEntity1= userDetailsRepo.findUserDetailsEntityIdByEmail(shareEmail);
                 if(Objects.nonNull(userDetailsEntity1)){
@@ -265,6 +284,34 @@ public class UploadServiceImpl implements UploadService{
             }
         }
         return null;
+
+    }
+
+
+    public List<PasswordNotification> getAllPasswordList(String userName){
+
+        List<PasswordNotification> passwordNotificationList= new ArrayList<>();
+
+
+        UserDetailsEntity userDetailsEntity= userDetailsRepo.findUserDetailsEntityIdByEmail(userName);
+        if(Objects.nonNull(userDetailsEntity)) {
+            List<PasswordNotificationEntity> passwordNotificationEntityList= passwordNotificationRepo.findAllByUserDetailsIdUserDetailsId(userDetailsEntity.getUserDetailsId());
+            if(Objects.nonNull(passwordNotificationEntityList)){
+
+                for(PasswordNotificationEntity passwordNotification :passwordNotificationEntityList){
+                    PasswordNotification passwordNotificationData= new PasswordNotification();
+                    passwordNotificationData.setApplicationName(passwordNotification.getApplicationName());
+                    passwordNotificationData.setCreationDate(passwordNotification.getCreationDate().toString());
+                    passwordNotificationData.setExpiryDate(passwordNotification.getExpriryDate().toString());
+                    passwordNotificationList.add(passwordNotificationData);
+                }
+
+                return passwordNotificationList;
+            }
+        }
+
+        return passwordNotificationList;
+
 
     }
 }

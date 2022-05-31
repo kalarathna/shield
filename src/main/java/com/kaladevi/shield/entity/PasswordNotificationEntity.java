@@ -22,7 +22,7 @@ public class PasswordNotificationEntity {
     @Column(name="password_notifictaion_id")
     public UUID passwordNotificationId;
 
-    @Column(name="application_name")
+    @Column(name="application_name", unique = true)
     public String applicationName;
 
     @Column(name="creation_date")
